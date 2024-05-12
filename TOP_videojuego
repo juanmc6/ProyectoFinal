@@ -1,0 +1,180 @@
+----------------------------------------------------------------------------------
+-- Company: 
+-- Engineer: 
+-- 
+-- Create Date: 16.04.2024 12:52:50
+-- Design Name: 
+-- Module Name: TOP_videojuego - Behavioral
+-- Project Name: 
+-- Target Devices: 
+-- Tool Versions: 
+-- Description: 
+-- 
+-- Dependencies: 
+-- 
+-- Revision:
+-- Revision 0.01 - File Created
+-- Additional Comments:
+-- 
+----------------------------------------------------------------------------------
+
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+-- Uncomment the following library declaration if using
+-- arithmetic functions with Signed or Unsigned values
+use IEEE.NUMERIC_STD.ALL;
+
+-- Uncomment the following library declaration if instantiating
+-- any Xilinx leaf cells in this code.
+--library UNISIM;
+--use UNISIM.VComponents.all;
+
+entity TOP_videojuego is
+Port ( clk : in STD_LOGIC;
+           rst : in STD_LOGIC;
+           
+           btnU: in std_logic;
+           btnD: in std_logic;
+           btnL: in std_logic;
+           btnR: in std_logic;
+           
+          hsinc : out std_logic;
+          vsinc : out std_logic;
+           
+          rgb: out unsigned(11 downto 0));
+
+
+end TOP_videojuego;
+
+ architecture Behavioral of TOP_videojuego is
+
+signal col :unsigned(9 downto 0);
+signal fila :unsigned(9 downto 0);
+signal addr_memo_pacman_senal :unsigned(3 downto 0);
+signal addr_memo_racetrack_senal :unsigned(4 downto 0);
+signal visible :std_logic;
+
+
+signal pacman_col:unsigned(4 downto 0);--comprobar pregunta 2
+signal pacman_fila:unsigned(4 downto 0);--comprobar pregunta 2
+
+signal dout_sig : unsigned(16-1 downto 0); 
+signal dout_sig_racetrack : unsigned(31 downto 0); 
+
+signal fantasma_fila_signal: unsigned(4 downto 0);
+signal fantasma_columna_signal: unsigned(4 downto 0);
+
+signal addr_memo_fantasma_senal: unsigned(3 downto 0);
+signal dout_fantasma_sig: unsigned(15 downto 0);
+
+
+component Cuenta1pxl is
+
+    Port ( clk : in STD_LOGIC;
+           rst : in STD_LOGIC;
+           new_pxl : out std_logic;
+           
+          hsinc : out std_logic;
+          vsinc : out std_logic;
+           
+          visible : out std_logic;
+           
+           fila : out unsigned(9 downto 0);
+           col : out unsigned(9 downto 0));
+          
+end component;
+     
+component ROM1b_1f_pacman_16x16_bn is
+  port (
+    clk  : in  std_logic;   -- reloj
+    addr : in  unsigned(4-1 downto 0);
+    dout : out unsigned(16-1 downto 0));
+end component;
+
+component pinta_barras is
+  Port (
+    visible      : in std_logic;
+    clk      : in std_logic;
+    col          : in unsigned(10-1 downto 0);
+    fila         : in unsigned(10-1 downto 0);
+    pacman_col: in unsigned(4 downto 0);
+    pacman_fila: in unsigned(4 downto 0);
+    dato_memo_pacman: in unsigned(15 downto 0);
+    dato_memo_racetrack: in unsigned(31 downto 0);
+    fantasma_col: in unsigned(4 downto 0);
+    fantasma_fil: in unsigned(4 downto 0);
+    dato_memo_fantasma: in unsigned(15 downto 0);
+    
+    addr_memo_fantasma :out unsigned(3 downto 0);
+    RGB :out unsigned(11 downto 0);
+    addr_memo_pacman :out unsigned(3 downto 0);
+    addr_memo_racetrack :out unsigned(4 downto 0));
+end component;
+
+component mov_pacman is
+    Port ( clk : in STD_LOGIC;
+           rst : in STD_LOGIC;
+           btnU : in STD_LOGIC;
+           btnD : in STD_LOGIC;
+           btnL : in STD_LOGIC;
+           btnR : in STD_LOGIC;
+           pacman_fila : out unsigned (4 downto 0);
+           pacman_columna : out unsigned (4 downto 0));
+end component;
+
+component ROM1b_1f_racetrack_1 is
+  port (
+    clk  : in  std_logic;   -- reloj
+    addr : in  unsigned(5-1 downto 0);
+    dout : out unsigned(32-1 downto 0) 
+  );
+end component;
+
+component mov_fantasma is
+    Port ( clk : in STD_LOGIC;
+           rst : in STD_LOGIC;
+           fantasma_fila : out unsigned (4 downto 0);
+           fantasma_columna : out unsigned (4 downto 0));
+end component;
+
+component ROM1b_1f_monster_16 is
+  port (
+    clk  : in  std_logic;   -- reloj
+    addr : in  unsigned(4-1 downto 0);
+    dout : out unsigned(16-1 downto 0) 
+  );
+end component;
+    
+begin
+cCuenta1pxl: Cuenta1pxl port map(clk=>clk,rst=>rst,hsinc=>hsinc,vsinc=>vsinc,col=>col,fila=>fila,visible=>visible);
+cpinta_barras: pinta_barras port map(
+    clk=>clk,
+    col=>col,
+    fila=>fila,
+    visible=>visible,
+    
+    rgb(11 downto 0)=>rgb(11 downto 0),
+
+    pacman_col=>pacman_col, 
+    pacman_fila=>pacman_fila,
+    
+    addr_memo_pacman=>addr_memo_pacman_senal,
+    dato_memo_pacman=>dout_sig,
+    
+    dato_memo_racetrack=>dout_sig_racetrack,
+    addr_memo_racetrack=>addr_memo_racetrack_senal,
+    
+    fantasma_col=>fantasma_columna_signal,
+    fantasma_fil=>fantasma_fila_signal,
+    dato_memo_fantasma=>dout_fantasma_sig,
+    addr_memo_fantasma=>addr_memo_fantasma_senal);
+    
+cmov_pacman: mov_pacman port map(clk=>clk,rst=>rst,btnU=>btnU,btnD=>btnD,btnL=>btnL,btnR=>btnR,pacman_fila=>pacman_fila,pacman_columna=>pacman_col);
+cROM1b_1f_pacman_16x16_bn: ROM1b_1f_pacman_16x16_bn port map(clk=>clk,addr=>addr_memo_pacman_senal,dout=>dout_sig);
+cROM1b_1f_racetrack_1: ROM1b_1f_racetrack_1 port map(clk=>clk,addr=>addr_memo_racetrack_senal,dout=>dout_sig_racetrack);
+cmov_fantasma: mov_fantasma port map(clk=>clk, rst=>rst, fantasma_fila=>fantasma_fila_signal, fantasma_columna=>fantasma_columna_signal);
+cROM1b_1f_monster_16: ROM1b_1f_monster_16 port map(clk=>clk,addr=>addr_memo_fantasma_senal,dout=>dout_fantasma_sig);
+
+end Behavioral;
